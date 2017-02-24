@@ -1,9 +1,9 @@
 #pragma warning(disable:4996)
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
+#include <ctype.h>
+#define MEM_BLOCK 8
 // TODO: Include local header files
 
 // TODO: Use all unused parameters and remove this temporary definition
@@ -45,15 +45,72 @@ double Calculate(char const* expression, error_t* error)
 
 //////////////////////////////////////////////////////////////////////////////
 // UI functions
-
+int isempty(char* line)
+{
+  int i = 0;
+  for (i = 0;line[i] != 0;i++)
+  {
+    if (isspace(line[i]) == 0)
+      return 0;
+  }
+  return 1;
+}
+int iscomment(char* line)
+{
+  int i;
+  for (i = 0;line[i] != 0;i++)
+  {
+    if (line[i] == '/'&&line[i + 1] == '/')
+      return 1;
+  }
+  return 0;
+}
 char* ReadLine(FILE* in)
 {
-  char* line = NULL;
+  int i = 0, n = MEM_BLOCK;
+  char* line = NULL, *realltmp = NULL;
+  char c = 0;
   // TODO: Read a line of text into a dynamic memory block
-  UNUSED_PARAMETER(in);
+  //UNUSED_PARAMETER(in);
+  line = (char*)malloc(sizeof(char));
+  if (line == NULL)
+  {
+    printf("ERROR: Not enough memory.");
+    exit(1);
+  }
+  while (c != '\n' && c != EOF)
+  {
+    for (i = 0;i < n;i++)
+    {
+      c = (char)getc(in);
+      line[i] = c;
+      if (c == '\n' || c == EOF)
+        break;
+    }
+    if (c != '\n' && c != EOF)
+    {
+      n += MEM_BLOCK;
+      if ((realltmp = (char*)realloc(line, n)) == NULL)
+      {
+        printf("ERROR: Not enough memory.");
+        exit(2);
+      }
+      else
+        line = realltmp;
+    }
+  }
+  line[i] = 0;  
   return line;
 }
-
+void print(char* line)
+{
+  if (iscomment(line))
+    printf("%s\n", line);
+  else if (isempty(line))
+    printf("%s\n", line);
+  else
+    printf("%s == 0\n", line);
+}
 int NeedCalculate(char const* line)
 {
   // TODO: Determine if the line contains an expression
@@ -88,23 +145,23 @@ int main(int argc, char const* argv[])
 {
   FILE* in = stdin;
   char* line = NULL;
-
-  // Choose an input source
-  if (argc > 1 && (in = fopen(argv[1], "r")) == NULL)
+  if (argc > 1 && (in = fopen(argv[1], "r")) == NULL)// Choose an input source
   {
     printf("ERROR: Cannot open file '%s'", argv[1]);
-    return -1;
+    exit(-1);
   }
-
-  // Process the data line by line
-  while ((line = ReadLine(in)) != NULL)
+  if (argc > 2)
   {
-    ProcessLine(line);
+    printf("ERROR: Too many input arguments.");
+    exit(3);
+  }
+  while ((line = ReadLine(in)) != NULL)// Process the data line by line
+  {
+    print(line);
+    //ProcessLine(line);
     free(line);
   }
-
-  // Clean up
-  if (in != stdin)
+  if (in != stdin)// Clean up
     fclose(in);
   return 0;
 }
