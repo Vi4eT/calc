@@ -102,14 +102,23 @@ char* ReadLine(FILE* in)
   line[i] = 0;
   return line;
 }
-void print(char* line)
+void print(char* line, FILE* in)
 {
   if (iscomment(line))
-    printf("%s\n", line);
+    if (feof(in))
+      printf("%s", line);
+    else
+      printf("%s\n", line);
   else if (isempty(line))
-    printf("%s\n", line);
+    if (feof(in))
+      printf("%s", line);
+    else
+      printf("%s\n", line);
   else
-    printf("%s == 0\n", line);
+    if (feof(in))
+      printf("%s == 0", line);
+    else
+      printf("%s == 0\n", line);
 }
 int NeedCalculate(char const* line)
 {
@@ -157,7 +166,7 @@ int main(int argc, char const* argv[])
   }
   while ((line = ReadLine(in)) != NULL)// Process the data line by line
   {
-    print(line);
+    print(line, in);
     //ProcessLine(line);
     free(line);
     if (feof(in))
