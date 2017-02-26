@@ -72,7 +72,7 @@ char* ReadLine(FILE* in)
   char c = 0;
   // TODO: Read a line of text into a dynamic memory block
   //UNUSED_PARAMETER(in);
-  line = (char*)malloc(sizeof(char));
+  line = (char*)malloc(sizeof(char)*n);
   if (line == NULL)
   {
     printf("ERROR: Not enough memory.");
@@ -80,7 +80,7 @@ char* ReadLine(FILE* in)
   }
   while (c != '\n' && c != EOF)
   {
-    for (i = 0;i < n;i++)
+    for (;i < n;i++)
     {
       c = (char)getc(in);
       line[i] = c;
@@ -99,7 +99,7 @@ char* ReadLine(FILE* in)
         line = realltmp;
     }
   }
-  line[i] = 0;  
+  line[i] = 0;
   return line;
 }
 void print(char* line)
@@ -147,7 +147,7 @@ int main(int argc, char const* argv[])
   char* line = NULL;
   if (argc > 1 && (in = fopen(argv[1], "r")) == NULL)// Choose an input source
   {
-    printf("ERROR: Cannot open file '%s'", argv[1]);
+    printf("ERROR: Cannot open file '%s'.\n", argv[1]);
     exit(-1);
   }
   if (argc > 2)
@@ -160,6 +160,8 @@ int main(int argc, char const* argv[])
     print(line);
     //ProcessLine(line);
     free(line);
+    if (feof(in))
+      break;
   }
   if (in != stdin)// Clean up
     fclose(in);
