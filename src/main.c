@@ -4,7 +4,6 @@
 #include <string.h>
 #include <ctype.h>
 #define MEM_BLOCK 8
-// TODO: Include local header files
 
 // TODO: Use all unused parameters and remove this temporary definition
 // Helps eliminating warning C4100: 'error': unreferenced formal parameter
