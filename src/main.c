@@ -1,47 +1,55 @@
 #pragma warning(disable:4996)
+#define _CRTDBG_MAP_ALLOC
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <crtdbg.h>
 #define MEM_BLOCK 8
-
-// TODO: Use all unused parameters and remove this temporary definition
-// Helps eliminating warning C4100: 'error': unreferenced formal parameter
-#define UNUSED_PARAMETER(name) (void)name
-
 //////////////////////////////////////////////////////////////////////////////
 // Dummy calc module
-
 // TODO: Move to a separate module 'calc'
 typedef enum
 {
   ERR_OK,
   ERR_NOT_ENOUGH_MEMORY,
-  // TODO: Add your own error codes
+  ERR_CANNOT_OPEN,
+  ERR_ARGUMENTS,
+  
 } error_t;
-
 // TODO: Move to a separate module 'calc'
 char const* GetErrorString(error_t error)
 {
-  // TODO: Find the corresponding error description
-  UNUSED_PARAMETER(error);
-  return "";
+  if (error == ERR_NOT_ENOUGH_MEMORY)
+    return "Not enough memory.";
+  else if (error == ERR_CANNOT_OPEN)
+    return "Cannot open file.";
+  else if (error == ERR_ARGUMENTS)
+    return "Too many input arguments.";
+  else
+    return "Success!";
 }
-
-// TODO: Move to a separate module 'calc'
-double Calculate(char const* expression, error_t* error)
+error_t ReportError(error_t error)
 {
-  double result;
-
-  // TODO: Replace with a computational algorithm subdivided into modules/functions
-  UNUSED_PARAMETER(expression);
-  result = 4.0;
-  if (error != NULL)
-    *error = ERR_OK;
-
-  return result;
+  printf("ERROR: %s\n", GetErrorString(error));
+  return error;
 }
-
+// TODO: Move to a separate module 'calc'
+double Calculate(char const* expression)
+{
+  error_t lastError = ERR_OK;
+  double result;
+  if(expression);//temp
+  // TODO: Replace with a computational algorithm subdivided into modules/functions
+  result = 4.0;
+  if(lastError==ERR_OK)
+    return result;
+  else
+  {
+    ReportError(lastError);
+    return lastError;
+  }
+}
 //////////////////////////////////////////////////////////////////////////////
 // UI functions
 int isempty(char* line)
@@ -64,18 +72,16 @@ int iscomment(char* line)
   }
   return 0;
 }
-char* ReadLine(FILE* in)
+char* ReadLine(FILE* in, error_t lastError)
 {
   int i = 0, n = MEM_BLOCK;
   char* line = NULL, *realltmp = NULL;
   char c = 0;
-  // TODO: Read a line of text into a dynamic memory block
-  //UNUSED_PARAMETER(in);
   line = (char*)malloc(sizeof(char)*n);
   if (line == NULL)
   {
-    printf("ERROR: Not enough memory.");
-    exit(1);
+    lastError = ERR_NOT_ENOUGH_MEMORY;
+    ReportError(lastError);
   }
   while (c != '\n' && c != EOF)
   {
@@ -91,8 +97,8 @@ char* ReadLine(FILE* in)
       n += MEM_BLOCK;
       if ((realltmp = (char*)realloc(line, n)) == NULL)
       {
-        printf("ERROR: Not enough memory.");
-        exit(2);
+        lastError = ERR_NOT_ENOUGH_MEMORY;
+        ReportError(lastError);
       }
       else
         line = realltmp;
@@ -100,6 +106,18 @@ char* ReadLine(FILE* in)
   }
   line[i] = 0;
   return line;
+}
+void ProcessLine(char const* line, FILE* in)
+{
+  error_t lastError = ERR_OK;
+  printf("%s == ", line);
+  double result = Calculate(line);
+  if (lastError == ERR_OK)
+    printf("%lg", result);
+  else
+    ReportError(lastError);
+  if (!feof(in))
+    printf("\n");
 }
 void print(char* line, FILE* in)
 {
@@ -114,64 +132,44 @@ void print(char* line, FILE* in)
     else
       printf("%s\n", line);
   else
-    if (feof(in))
-      printf("%s == 0", line);
-    else
-      printf("%s == 0\n", line);
+    ProcessLine(line, in);
 }
-int NeedCalculate(char const* line)
+/*int NeedCalculate(char const* line)
 {
   // TODO: Determine if the line contains an expression
   UNUSED_PARAMETER(line);
   return 1;
-}
-
-error_t ReportError(error_t error)
-{
-  printf("ERROR: %s\n", GetErrorString(error));
-  return error;
-}
-
-void ProcessLine(char const* line)
-{
-  error_t lastError = ERR_OK;
-  if (!NeedCalculate(line))
-  {
-    puts(line);
-    return;
-  }
-
-  printf("%s == ", line);
-  double result = Calculate(line, &lastError);
-  if (lastError == ERR_OK)
-    printf("%lg\n", result);
-  else
-    ReportError(lastError);
-}
-
+}*/
+//need it?
 int main(int argc, char const* argv[])
 {
   FILE* in = stdin;
   char* line = NULL;
+  error_t lastError = ERR_OK;
   if (argc > 1 && (in = fopen(argv[1], "r")) == NULL)// Choose an input source
   {
-    printf("ERROR: Cannot open file '%s'.\n", argv[1]);
-    exit(-1);
+    lastError = ERR_CANNOT_OPEN;
+    ReportError(lastError);
   }
   if (argc > 2)
   {
-    printf("ERROR: Too many input arguments.");
-    exit(3);
+    lastError = ERR_ARGUMENTS;
+    ReportError(lastError);
   }
-  while ((line = ReadLine(in)) != NULL)// Process the data line by line
+  while ((line = ReadLine(in, lastError)) != NULL)// Process the data line by line
   {
+    if (lastError != ERR_OK)
+    {
+      lastError = ERR_OK;
+      continue;
+    }
     print(line, in);
-    //ProcessLine(line);
     free(line);
     if (feof(in))
       break;
   }
   if (in != stdin)// Clean up
     fclose(in);
+  _CrtDumpMemoryLeaks();
   return 0;
 }
