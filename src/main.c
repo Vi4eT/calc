@@ -4,8 +4,20 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <math.h>
 #include <crtdbg.h>
 #define MEM_BLOCK 8
+#define SQRT 1
+#define SIN 2
+#define COS 3
+#define TG 4
+#define CTG 5
+#define ARCSIN 6
+#define ARCCOS 7
+#define ARCTG 8
+#define LN 9
+#define FLOOR 10
+#define CEIL 11
 //////////////////////////////////////////////////////////////////////////////
 // Dummy calc module
 // TODO: Move to a separate module 'calc'
@@ -15,7 +27,11 @@ typedef enum
   ERR_NOT_ENOUGH_MEMORY,
   ERR_CANNOT_OPEN,
   ERR_ARGUMENTS,
-  
+  ERR_OPERANDS,
+  ERR_DIV_ZERO,
+  ERR_BRACKETS,
+  ERR_EXPRESSION,
+  ERR_DOMAIN
 } error_t;
 // TODO: Move to a separate module 'calc'
 char const* GetErrorString(error_t error)
@@ -26,8 +42,20 @@ char const* GetErrorString(error_t error)
     return "Cannot open file.";
   else if (error == ERR_ARGUMENTS)
     return "Too many input arguments.";
+  else if (error == ERR_OPERANDS)
+    return "Not enough operands.";
+  else if (error == ERR_DIV_ZERO)
+    return "Division by zero!";
+  else if (error == ERR_BRACKETS)
+    return "Brackets.";
+  else if (error == ERR_EXPRESSION)
+    return "Wrong expression.";
+  else if (error == ERR_DOMAIN)
+    return "Out of domain.";
+  else if (error == ERR_OK)
+    return "Redundant error report.";
   else
-    return "Success!";
+    return "No error code!";
 }
 error_t ReportError(error_t error)
 {
@@ -35,20 +63,247 @@ error_t ReportError(error_t error)
   return error;
 }
 // TODO: Move to a separate module 'calc'
-double Calculate(char const* expression)
+int isfunc(char const *s)
 {
-  error_t lastError = ERR_OK;
-  double result;
-  if(expression);//temp
-  // TODO: Replace with a computational algorithm subdivided into modules/functions
-  result = 4.0;
-  if(lastError==ERR_OK)
-    return result;
+  if (strncmp(s, "sqrt", 4) == 0)
+    return SQRT;
+  else if (strncmp(s, "sin", 3) == 0)
+    return SIN;
+  else if (strncmp(s, "cos", 3) == 0)
+    return COS;
+  else if (strncmp(s, "tg", 2) == 0)
+    return TG;
+  else if (strncmp(s, "ctg", 3) == 0)
+    return CTG;
+  else if (strncmp(s, "arcsin", 6) == 0)
+    return ARCSIN;
+  else if (strncmp(s, "arccos", 6) == 0)
+    return ARCCOS;
+  else if (strncmp(s, "arctg", 5) == 0)
+    return ARCTG;
+  else if (strncmp(s, "ln", 2) == 0)
+    return LN;
+  else if (strncmp(s, "floor", 5) == 0)
+    return FLOOR;
+  else if (strncmp(s, "ceil", 4) == 0)
+    return CEIL;
+  else
+    return 0;
+}
+void FuncToStack(char out, int func)
+{
+  if (func == SQRT)
+    out = 'q';
+  else if (func == SIN)
+    out = 's';
+  else if (func == COS)
+    out = 'c';
+  else if (func == TG)
+    out = 't';
+  else if (func == CTG)
+    out = 'g';
+  else if (func == ARCSIN)
+    out = 'i';
+  else if (func == ARCCOS)
+    out = 'o';
+  else if (func == ARCTG)
+    out = 'a';
+  else if (func == LN)
+    out = 'n';
+  else if (func == FLOOR)
+    out = 'f';
+  else if (func == CEIL)
+    out = 'l';
+}
+int isoper(char s)
+{
+  if (s == '^')
+    return 1;
+  else if (s == '*' || s == '/')
+    return 2;
+  else if (s == '+' || s == '-')
+    return 3;
+  else
+    return 0;
+}
+void Parse(char const *expression, char *output, error_t* lastError)
+{
+  int i = 0, j = 0, k = 0;
+  char *stack;
+  stack = (char*)malloc(sizeof(char)*strlen(expression)/2+1);//realloc
+  if (stack == NULL)
+  {
+    *lastError = ERR_NOT_ENOUGH_MEMORY;
+    return;
+  }
+  while (expression[i])
+  {
+    if (isdigit(expression[i]))
+    {
+      output[j] = expression[i];
+      j++;
+      if (!isdigit(expression[i+1]) || isspace(expression[i+1]))
+      {
+        output[j] = ' ';
+        j++;
+      }
+    }
+    else if (isfunc(expression + i))
+    {
+      FuncToStack(stack[k], isfunc(expression + i));
+      k++;
+    }
+    else if (expression[i] == '(')
+    {
+      stack[k] = expression[i];
+      k++;
+    }
+    else if (expression[i] == ')')
+    {
+      k--;
+      if (k < 2)
+      {
+        *lastError = ERR_BRACKETS;
+        return;
+      }
+      for (; stack[k] != '(' && k >= 0; k--, j++)
+      {
+        output[j] = stack[k];
+        output[j + 1] = ' ';
+        j++;
+      }
+      if (stack[k] != '(')
+      {
+        *lastError = ERR_BRACKETS;
+        return;
+      }
+    }
+    else if (isoper(expression[i]))
+    {
+      if (k && stack[k - 1] != '(')
+      {
+        while ((isoper(expression[i]) >= isoper(stack[k - 1])) && k > 0)
+        {
+          k--;
+          output[j] = stack[k];
+          j++;
+          output[j] = ' ';
+          j++;
+        }
+      }
+      stack[k] = expression[i];
+      k++;
+    }
+    else if (isspace(expression[i]));
+    else
+    {
+      *lastError = ERR_EXPRESSION;
+      return;
+    }
+    i++;
+  }
+  k--;
+  if (k>-1)
+    for (; k > -1; k--, j++)
+    {
+      if (stack[k] == '(')
+      {
+        *lastError = ERR_BRACKETS;
+        return;
+      }
+      output[j] = stack[k];
+      output[j + 1] = ' ';
+      j++;
+    }
   else
   {
-    ReportError(lastError);
-    return lastError;
+    *lastError = ERR_OPERANDS;
+    return;
   }
+  free(stack);
+  output[j] = '\0';
+}
+double Count(char* output, error_t* lastError)//spaces!
+{
+  int j = 0;
+  double *stack, number;
+  char *endptr;
+  stack = (double*)malloc(sizeof(double)*strlen(output) / 4 + 1);//realloc
+  while (*output)
+  {
+    if (isdigit(*output))
+    {
+      stack[j] = strtod(output, &endptr);
+      output = endptr;
+      j++;
+    }
+    else if (isoper(*output))
+    {
+      j -= 2;
+      if (j < 0)
+      {
+        *lastError = ERR_OPERANDS;
+        return 1;
+      }
+      switch (*output)
+      {
+        case '+':
+          stack[j] += stack[j + 1];
+          break;
+        case '-':
+          stack[j] -= stack[j + 1];
+          break;
+        case '*':
+          stack[j] *= stack[j + 1];
+          break;
+        case '/':
+          if (stack[j + 1] == 0)
+          {
+            *lastError = ERR_DIV_ZERO;
+            return 1;
+          }
+          stack[j] /= stack[j + 1];
+          break;
+        case '^':
+          if ((stack[j] == 0 && stack[j + 1] <= 0) || (stack[j] < 0 && stack[j + 1] != (int)stack[j + 1]))
+          {
+            *lastError = ERR_DOMAIN;
+            return 1;
+          }
+          stack[j] = pow(stack[j], stack[j + 1]);
+          break;
+      }
+      j++;
+      *output++;
+    }
+    if (isspace(*output))
+      *output++;
+    //i++;
+  }
+  number = stack[0];
+  free(stack);
+  return number;
+}
+double Calculate(char const* expression, error_t* lastError)
+{
+  double result;
+  char *output;
+  output = (char*)malloc(sizeof(char)*strlen(expression) * 2 + 1);
+  if (output == NULL)
+  {
+    *lastError = ERR_NOT_ENOUGH_MEMORY;
+    return 1;
+  }
+  Parse(expression, output, lastError);
+  //printf("%s", output);//temp
+  if (*lastError != ERR_OK)
+    return 1;
+  result = Count(output, lastError);
+  if (*lastError != ERR_OK)
+    return 1;
+  //result = 4.0;
+  free(output);
+  return result;
 }
 //////////////////////////////////////////////////////////////////////////////
 // UI functions
@@ -72,7 +327,7 @@ int iscomment(char* line)
   }
   return 0;
 }
-char* ReadLine(FILE* in, error_t lastError)
+char* ReadLine(FILE* in, error_t* lastError)
 {
   int i = 0, n = MEM_BLOCK;
   char* line = NULL, *realltmp = NULL;
@@ -80,12 +335,12 @@ char* ReadLine(FILE* in, error_t lastError)
   line = (char*)malloc(sizeof(char)*n);
   if (line == NULL)
   {
-    lastError = ERR_NOT_ENOUGH_MEMORY;
-    ReportError(lastError);
+    *lastError = ERR_NOT_ENOUGH_MEMORY;
+    ReportError(*lastError);
   }
   while (c != '\n' && c != EOF)
   {
-    for (;i < n;i++)
+    for (; i < n; i++)
     {
       c = (char)getc(in);
       line[i] = c;
@@ -97,8 +352,8 @@ char* ReadLine(FILE* in, error_t lastError)
       n += MEM_BLOCK;
       if ((realltmp = (char*)realloc(line, n)) == NULL)
       {
-        lastError = ERR_NOT_ENOUGH_MEMORY;
-        ReportError(lastError);
+        *lastError = ERR_NOT_ENOUGH_MEMORY;
+        ReportError(*lastError);
       }
       else
         line = realltmp;
@@ -107,19 +362,20 @@ char* ReadLine(FILE* in, error_t lastError)
   line[i] = 0;
   return line;
 }
-void ProcessLine(char const* line, FILE* in)
+void ProcessLine(char const* line, FILE* in, error_t* lastError)
 {
-  error_t lastError = ERR_OK;
   printf("%s == ", line);
-  double result = Calculate(line);
-  if (lastError == ERR_OK)
+  double result = Calculate(line, lastError);
+  if (*lastError == ERR_OK)
+  {
     printf("%lg", result);
+    if (!feof(in))
+      printf("\n");
+  }
   else
-    ReportError(lastError);
-  if (!feof(in))
-    printf("\n");
+    ReportError(*lastError);
 }
-void print(char* line, FILE* in)
+void print(char* line, FILE* in, error_t* lastError)
 {
   if (iscomment(line))
     if (feof(in))
@@ -132,15 +388,8 @@ void print(char* line, FILE* in)
     else
       printf("%s\n", line);
   else
-    ProcessLine(line, in);
+    ProcessLine(line, in, lastError);
 }
-/*int NeedCalculate(char const* line)
-{
-  // TODO: Determine if the line contains an expression
-  UNUSED_PARAMETER(line);
-  return 1;
-}*/
-//need it?
 int main(int argc, char const* argv[])
 {
   FILE* in = stdin;
@@ -156,14 +405,11 @@ int main(int argc, char const* argv[])
     lastError = ERR_ARGUMENTS;
     ReportError(lastError);
   }
-  while ((line = ReadLine(in, lastError)) != NULL)// Process the data line by line
+  while ((line = ReadLine(in, &lastError)) != NULL)// Process the data line by line
   {
     if (lastError != ERR_OK)
-    {
       lastError = ERR_OK;
-      continue;
-    }
-    print(line, in);
+    print(line, in, &lastError);
     free(line);
     if (feof(in))
       break;
