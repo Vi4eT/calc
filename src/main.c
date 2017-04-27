@@ -135,7 +135,7 @@ void Parse(char const *expression, char *output, error_t* lastError)
 {
   int i = 0, j = 0, k = 0, n, previous = 0;
   char *stack, *realltmp;
-  n = 8 * MEM_BLOCK;
+  n = 4 * MEM_BLOCK;
   stack = (char*)malloc(sizeof(char)*n);
   if (stack == NULL)
   {
@@ -149,6 +149,7 @@ void Parse(char const *expression, char *output, error_t* lastError)
       if (previous == 1)
       {
         *lastError = ERR_SIGNS;
+        free(stack);
         return;
       }
       output[j] = expression[i];
@@ -178,6 +179,7 @@ void Parse(char const *expression, char *output, error_t* lastError)
       if (k < 1)
       {
         *lastError = ERR_BRACKETS;
+        free(stack);
         return;
       }
       for (; stack[k] != '(' && k >= 0; k--, j++)
@@ -189,6 +191,7 @@ void Parse(char const *expression, char *output, error_t* lastError)
       if (stack[k] != '(')
       {
         *lastError = ERR_BRACKETS;
+        free(stack);
         return;
       }
       previous = 4;
@@ -226,6 +229,7 @@ void Parse(char const *expression, char *output, error_t* lastError)
     else
     {
       *lastError = ERR_EXPRESSION;
+      free(stack);
       return;
     }
     i++;
@@ -235,6 +239,7 @@ void Parse(char const *expression, char *output, error_t* lastError)
       if ((realltmp = (char*)realloc(stack, n)) == NULL)
       {
         *lastError = ERR_NOT_ENOUGH_MEMORY;
+        free(stack);
         return;
       }
       else
@@ -248,6 +253,7 @@ void Parse(char const *expression, char *output, error_t* lastError)
       if (stack[k] == '(')
       {
         *lastError = ERR_BRACKETS;
+        free(stack);
         return;
       }
       output[j] = stack[k];
@@ -257,6 +263,7 @@ void Parse(char const *expression, char *output, error_t* lastError)
   else
   {
     *lastError = ERR_OPERANDS;
+    free(stack);
     return;
   }
   free(stack);
@@ -267,8 +274,13 @@ double Count(char* output, error_t* lastError)
   int j = 0, n;
   double *stack, *realltmp, number;
   char *endptr;
-  n = 8 * MEM_BLOCK;
+  n = 4 * MEM_BLOCK;
   stack = (double*)malloc(sizeof(double)*n);
+  if (stack == NULL)
+  {
+    *lastError = ERR_NOT_ENOUGH_MEMORY;
+    return 1;
+  }
   while (*output)
   {
     if (isdigit(*output))
@@ -283,6 +295,7 @@ double Count(char* output, error_t* lastError)
       if (j < 0)
       {
         *lastError = ERR_OPERANDS;
+        free(stack);
         return 1;
       }
       switch (*output)
@@ -300,6 +313,7 @@ double Count(char* output, error_t* lastError)
           if (stack[j + 1] == 0)
           {
             *lastError = ERR_DIV_ZERO;
+            free(stack);
             return 1;
           }
           stack[j] /= stack[j + 1];
@@ -308,6 +322,7 @@ double Count(char* output, error_t* lastError)
           if ((stack[j] == 0 && stack[j + 1] <= 0) || (stack[j] < 0 && stack[j + 1] != (int)stack[j + 1]))
           {
             *lastError = ERR_DOMAIN;
+            free(stack);
             return 1;
           }
           stack[j] = pow(stack[j], stack[j + 1]);
@@ -324,6 +339,7 @@ double Count(char* output, error_t* lastError)
       if ((realltmp = (double*)realloc(stack, n)) == NULL)
       {
         *lastError = ERR_NOT_ENOUGH_MEMORY;
+        free(stack);
         return 1;
       }
       else
@@ -346,10 +362,16 @@ double Calculate(char const* expression, error_t* lastError)
   }
   Parse(expression, output, lastError);
   if (*lastError != ERR_OK)
+  {
+    free(output);
     return 1;
+  }
   result = Count(output, lastError);
   if (*lastError != ERR_OK)
+  {
+    free(output);
     return 1;
+  }
   free(output);
   return result;
 }
