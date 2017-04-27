@@ -197,14 +197,26 @@ void Parse(char const *expression, char *output, error_t* lastError)
     {
       if (k && stack[k - 1] != '(')
       {
-        while ((isoper(expression[i]) >= isoper(stack[k - 1])) && k > 0)
+        if (isoper(expression[i]) == 1)
         {
-          k--;
-          output[j] = stack[k];
-          j++;
-          output[j] = ' ';
-          j++;
+          while ((isoper(expression[i]) > isoper(stack[k - 1])) && k > 0)
+          {
+            k--;
+            output[j] = stack[k];
+            j++;
+            output[j] = ' ';
+            j++;
+          }
         }
+        else
+          while ((isoper(expression[i]) >= isoper(stack[k - 1])) && k > 0)
+          {
+            k--;
+            output[j] = stack[k];
+            j++;
+            output[j] = ' ';
+            j++;
+          }
       }
       stack[k] = expression[i];
       k++;
