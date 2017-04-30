@@ -1,10 +1,11 @@
 #include "calc.h"
+#include <math.h>
 double Count(char* output, error_t* lastError)
 {
   int j = 0, n;
   double *stack, *realltmp, number;
   char *endptr;
-  n = 4 * MEM_BLOCK;
+  n = 2 * MEM_BLOCK;
   stack = (double*)malloc(sizeof(double)*n);
   if (stack == NULL)
   {
@@ -230,6 +231,8 @@ double Calculate(char const* expression, error_t* lastError)
     return 1;
   }
   result = Count(output, lastError);
+  if (result == -0)
+    result = 0;
   if (*lastError != ERR_OK)
   {
     free(output);

@@ -77,9 +77,9 @@ void Shift(int *i, int fun)
 }
 int isoper(char s)
 {
-  if (s == '!')
+  if (s == '^')
     return 1;
-  else if (s == '^')
+  else if (s == '!')
     return 2;
   else if (s == '*' || s == '/')
     return 3;
@@ -99,14 +99,9 @@ int FunCheck(int s)
 }
 int FindUnary(char const* expression, int* i, int* previous, error_t* lastError)
 {
-  if (*previous == 6 || *previous == 2)
+  if (*previous == 6 || *previous == 2 || *previous == 5 || *previous == 0 || *previous == 3 || ((*previous == 1 || *previous == 7 || *previous == 8 || *previous == 9) && expression[*i + 1] == '-'))
   {
-    *lastError = ERR_MINUS;
-    return 0;
-  }
-  else if (*previous == 5 || *previous == 0 || *previous == 3 || (*previous == 1 && expression[*i + 1] == '-'))
-  {
-    if (expression[*i + 1] == ')' || isoper(expression[*i + 1]) == 1 || isoper(expression[*i + 1]) == 2 || expression[*i + 1] == '+')
+    if (expression[*i + 1] == ')' || isoper(expression[*i + 1]) == 1 || isoper(expression[*i + 1]) == 3 || expression[*i + 1] == '+')
     {
       *lastError = ERR_MINUS;
       return 0;
@@ -127,7 +122,7 @@ int FindUnary(char const* expression, int* i, int* previous, error_t* lastError)
         if (amount % 2 == 0)
           return 2;
       }
-      if (*previous == 1 && amount % 2)
+      if ((*previous == 1 || *previous == 6 || *previous == 7 || *previous == 8 || *previous == 9) && amount % 2)
         return 0;
       return 1;
     }
@@ -139,7 +134,7 @@ void Parse(char const *expression, char *output, error_t* lastError)
 {
   int i = 0, j = 0, k = 0, n, previous = 0;
   char *stack, *realltmp = NULL;
-  n = 1 * MEM_BLOCK;
+  n = 2 * MEM_BLOCK;
   stack = (char*)malloc(sizeof(char)*n);
   if (stack == NULL)
   {
@@ -150,7 +145,7 @@ void Parse(char const *expression, char *output, error_t* lastError)
   {
     if (isdigit(expression[i]))
     {
-      if (previous == 1 || previous == 4)
+      if (previous == 1 || previous == 4 || previous == 7 || previous == 8 || previous == 9)
       {
         *lastError = ERR_SIGNS;
         free(stack);
@@ -179,7 +174,7 @@ void Parse(char const *expression, char *output, error_t* lastError)
         free(stack);
         return;
       }
-      if (previous == 6 || previous == 8 || previous == 9 || previous == 7 || previous == 2 || previous == 4 || previous == 6)
+      if (previous == 6 || previous == 8 || previous == 9 || previous == 7 || previous == 4 || previous == 6)
       {
         *lastError = ERR_POINT;
         free(stack);
@@ -200,11 +195,17 @@ void Parse(char const *expression, char *output, error_t* lastError)
         }
       output[j] = expression[i];
       j++;
+      if ((expression[i + 1] != '(' && isoper(expression[i + 1]) != 0) || isspace(expression[i + 1]))
+      {
+        output[j] = ' ';
+        j++;
+        previous = 1;
+      }
       previous = 6;
     }
     else if (expression[i] == 'p' && expression[i + 1] == 'i')
     {
-      if (previous == 1 || previous == 4)
+      if (previous == 1 || previous == 4 || previous == 6 || previous == 7 || previous == 8 || previous == 9)
       {
         *lastError = ERR_SIGNS;
         free(stack);
@@ -237,7 +238,7 @@ void Parse(char const *expression, char *output, error_t* lastError)
           free(stack);
           return;
         }
-        if (isoper(expression[i + 1]))
+        if (expression[i + 1] == '+' || expression[i + 1] == '-')
         {
           i++;
           output[j] = expression[i];
@@ -255,7 +256,7 @@ void Parse(char const *expression, char *output, error_t* lastError)
           output[j] = expression[i];
           j++;
         }
-        if ((!isoper(expression[i + 1]) || expression[i + 1] == '(' || expression[i + 1] == '(') && !isspace(expression[i + 1]) && expression[i + 1] != 0)
+        if ((!isoper(expression[i + 1]) || expression[i + 1] == '(') && !isspace(expression[i + 1]) && expression[i + 1] != 0)
         {
           *lastError = ERR_E;
           free(stack);
@@ -274,6 +275,12 @@ void Parse(char const *expression, char *output, error_t* lastError)
     }
     else if (isfunc(expression + i))
     {
+      if (previous == 1 || previous == 2 || previous == 4 || previous == 6 || previous == 7 || previous == 8 || previous == 9)
+      {
+        *lastError = ERR_EXPRESSION;
+        free(stack);
+        return;
+      }
       FunToStack(&stack[k], isfunc(expression + i));
       k++;
       Shift(&i, isfunc(expression + i));
@@ -281,7 +288,7 @@ void Parse(char const *expression, char *output, error_t* lastError)
     }
     else if (expression[i] == '(')
     {
-      if (previous == 1)
+      if (previous == 1 || previous == 4 || previous == 6 || previous == 7 || previous == 8 || previous == 9)
       {
         *lastError = ERR_SIGNS;
         free(stack);
@@ -294,7 +301,7 @@ void Parse(char const *expression, char *output, error_t* lastError)
     else if (expression[i] == ')')
     {
       k--;
-      if (k < 0)
+      if (k < 0 || previous == 0 || previous == 2 || previous == 5)
       {
         *lastError = ERR_BRACKETS;
         free(stack);
@@ -327,7 +334,7 @@ void Parse(char const *expression, char *output, error_t* lastError)
       {
         unarycase = FindUnary(expression, &i, &previous, lastError);
         if (unarycase == 1)
-          previous = '!';
+          priority = 2;
         if (*lastError != ERR_OK)
         {
           free(stack);
@@ -336,13 +343,11 @@ void Parse(char const *expression, char *output, error_t* lastError)
       }
       if (k && stack[k - 1] != '(')
       {
-        if (isoper((char)previous) == 1 || isoper(expression[i]) == 2)
+        if (priority == 2 || isoper(expression[i]) == 1)
         {
-          if (isoper((char)previous) == 1)
+          if (priority != 2)
             priority = 1;
-          else
-            priority = 2;
-          while ((priority > isoper(stack[k - 1])) && k > 0)
+          while ((priority > isoper(stack[k - 1])) && k > 0 && (previous != 2 && isoper(stack[k - 1]) != 1))
           {
             k--;
             output[j] = stack[k];
@@ -356,7 +361,9 @@ void Parse(char const *expression, char *output, error_t* lastError)
           if (unarycase == 2)
             i++;
           int oper = isoper(expression[i]);
-          if (unarycase == 2 && (previous == 1 || previous == 7 || previous == 8 || previous == 4))
+          if (unarycase == 2 && oper == 5)
+            oper = 0;
+          if (unarycase == 2 && (previous == 1 || previous == 7 || previous == 8 || previous == 9 || previous == 4))
             oper = 4;
           while ((oper >= isoper(stack[k - 1])) && k > 0)
           {
@@ -370,12 +377,12 @@ void Parse(char const *expression, char *output, error_t* lastError)
             i--;
         }
       }
-      if (priority == 1 || previous == '!')
+      if (priority == 2)
       {
         stack[k] = '!';
         k++;
       }
-      else if (unarycase == 2 && (previous == 1 || previous == 7 || previous == 8 || previous == 4))
+      else if (unarycase == 2 && (previous == 1 || previous == 7 || previous == 8 || previous == 9 || previous == 4))
       {
         stack[k] = '+';
         k++;
@@ -409,7 +416,7 @@ void Parse(char const *expression, char *output, error_t* lastError)
     }
   }
   k--;
-  if (isoper(stack[0]) || (isdigit(output[j - 2]) && !isoper(stack[0])) || FunCheck(stack[0]) || (previous == 7 && !isoper(stack[0])))
+  //if (isoper(stack[0]) || (isdigit(output[j - 2]) && !isoper(stack[0])) || FunCheck(stack[0]) || ((previous == 7 || previous == 8) && !isoper(stack[0])))
     for (; k > -1; k--, j++)
     {
       if (stack[k] == '(')
@@ -422,12 +429,12 @@ void Parse(char const *expression, char *output, error_t* lastError)
       output[j + 1] = ' ';
       j++;
     }
-  else
+  /*else
   {
     *lastError = ERR_OPERANDS;
     free(stack);
     return;
-  }
+  }*/
   free(stack);
   output[j] = '\0';
 }

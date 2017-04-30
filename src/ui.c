@@ -48,8 +48,11 @@ int iscomment(char* line)
   int i;
   for (i = 0; line[i] != 0; i++)
   {
-    if (line[i] == '/'&&line[i + 1] == '/')
-      return 1;
+    if (!isspace(line[i]))
+      if (line[i] == '/' && line[i + 1] == '/')
+        return 1;
+      else
+        break;
   }
   return 0;
 }

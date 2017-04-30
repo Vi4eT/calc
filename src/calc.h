@@ -6,7 +6,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
-#include <math.h>
 #include <crtdbg.h>
 #define MEM_BLOCK 8
 typedef enum
