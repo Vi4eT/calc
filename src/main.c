@@ -18,13 +18,13 @@ int main(int argc, char const* argv[])
   }
   while ((line = ReadLine(in, &lastError)) != NULL)// Process the data line by line
   {
-    if (line == (char*)1)
+    if (line == (char*)1)//ReadLine error
       continue;
     if (lastError != ERR_OK)
       lastError = ERR_OK;
     print(line, in, &lastError);
     free(line);
-    if (feof(in))
+    if (feof(in))//always != NULL
       break;
   }
   if (in != stdin)// Clean up

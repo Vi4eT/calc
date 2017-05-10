@@ -1,5 +1,77 @@
 #include "calc.h"
 #include <math.h>
+void FunCount(char const* output, double* stack, int j, error_t* lastError)
+{
+  switch (*output)
+  {
+    case 'q':
+      if (stack[j] < 0)
+      {
+        *lastError = ERR_DOMAIN;
+        return;
+      }
+      stack[j] = sqrt(stack[j]);
+      break;
+    case 's':
+      stack[j] = sin(stack[j]);
+      break;
+    case 'c':
+      stack[j] = cos(stack[j]);
+      break;
+    case 't':
+      if (cos(stack[j]) == 0)
+      {
+        *lastError = ERR_DOMAIN;
+        return;
+      }
+      stack[j] = tan(stack[j]);
+      break;
+    case 'g':
+      if (sin(stack[j]) == 0)
+      {
+        *lastError = ERR_DOMAIN;
+        return;
+      }
+      else if (cos(stack[j]) == 0)
+        stack[j] = 0;
+      else
+        stack[j] = 1 / tan(stack[j]);
+      break;
+    case 'i':
+      if (stack[j] > 1 || stack[j] < -1)
+      {
+        *lastError = ERR_DOMAIN;
+        return;
+      }
+      stack[j] = asin(stack[j]);
+      break;
+    case 'o':
+      if (stack[j] > 1 || stack[j] < -1)
+      {
+        *lastError = ERR_DOMAIN;
+        return;
+      }
+      stack[j] = acos(stack[j]);
+      break;
+    case 'a':
+      stack[j] = atan(stack[j]);
+      break;
+    case 'n':
+      if (stack[j] <= 0)
+      {
+        *lastError = ERR_DOMAIN;
+        return;
+      }
+      stack[j] = log(stack[j]);
+      break;
+    case 'f':
+      stack[j] = floor(stack[j]);
+      break;
+    case 'l':
+      stack[j] = ceil(stack[j]);
+      break;
+  }
+}
 double Count(char* output, error_t* lastError)
 {
   int j = 0, n;
@@ -23,10 +95,10 @@ double Count(char* output, error_t* lastError)
     else if (*output == 'E')
     {
       j--;
-      *output++;
+      *(output++);
       if (*output == '-')
       {
-        *output++;
+        *(output++);
         stack[j + 1] = strtod(output, &endptr);
         output = endptr;
         while (stack[j + 1]>0)
@@ -38,7 +110,7 @@ double Count(char* output, error_t* lastError)
       else
       {
         if (*output == '+')
-          *output++;
+          *(output++);
         stack[j + 1] = strtod(output, &endptr);
         output = endptr;
         while (stack[j + 1]>0)
@@ -53,13 +125,13 @@ double Count(char* output, error_t* lastError)
     {
       stack[j] = M_PI;
       j++;
-      *output++;
+      *(output++);
     }
     else if (*output == 'e')
     {
       stack[j] = M_E;
       j++;
-      *output++;
+      *(output++);
     }
     else if (FunCheck(*output))
     {
@@ -70,83 +142,14 @@ double Count(char* output, error_t* lastError)
         free(stack);
         return 1;
       }
-      switch (*output)
+      FunCount(output, stack, j, lastError);
+      if (*lastError != ERR_OK)
       {
-        case 'q':
-          if (stack[j] < 0)
-          {
-            *lastError = ERR_DOMAIN;
-            free(stack);
-            return 1;
-          }
-          stack[j] = sqrt(stack[j]);
-          break;
-        case 's':
-          stack[j] = sin(stack[j]);
-          break;
-        case 'c':
-          stack[j] = cos(stack[j]);
-          break;
-        case 't':
-          if (cos(stack[j]) == 0)
-          {
-            *lastError = ERR_DOMAIN;
-            free(stack);
-            return 1;
-          }
-          stack[j] = tan(stack[j]);
-          break;
-        case 'g':
-          if (sin(stack[j]) == 0)
-          {
-            *lastError = ERR_DOMAIN;
-            free(stack);
-            return 1;
-          }
-          else if (cos(stack[j]) == 0)
-            stack[j] = 0;
-          else
-            stack[j] = 1 / tan(stack[j]);
-          break;
-        case 'i':
-          if (stack[j] > 1 || stack[j] < -1)
-          {
-            *lastError = ERR_DOMAIN;
-            free(stack);
-            return 1;
-          }
-          stack[j] = asin(stack[j]);
-          break;
-        case 'o':
-          if (stack[j] > 1 || stack[j] < -1)
-          {
-            *lastError = ERR_DOMAIN;
-            free(stack);
-            return 1;
-          }
-          stack[j] = acos(stack[j]);
-          break;
-        case 'a':
-          stack[j] = atan(stack[j]);
-          break;
-        case 'n':
-          if (stack[j] <= 0)
-          {
-            *lastError = ERR_DOMAIN;
-            free(stack);
-            return 1;
-          }
-          stack[j] = log(stack[j]);
-          break;
-        case 'f':
-          stack[j] = floor(stack[j]);
-          break;
-        case 'l':
-          stack[j] = ceil(stack[j]);
-          break;
+        free(stack);
+        return 1;
       }
       j++;
-      *output++;
+      *(output++);
     }
     else if (isoper(*output))
     {
@@ -183,7 +186,7 @@ double Count(char* output, error_t* lastError)
           stack[j] /= stack[j + 1];
           break;
         case '^':
-          if ((stack[j] == 0 && stack[j + 1] <= 0) || (stack[j] < 0 && stack[j + 1] != (int)stack[j + 1]))
+          if ((stack[j] == 0 && stack[j + 1] <= 0) || (stack[j] < 0 && stack[j + 1] != (int)stack[j + 1])) //rational exponent: NaN || complex
           {
             *lastError = ERR_DOMAIN;
             free(stack);
@@ -193,10 +196,10 @@ double Count(char* output, error_t* lastError)
           break;
       }
       j++;
-      *output++;
+      *(output++);
     }
     if (isspace(*output))
-      *output++;
+      *(output++);
     if (j >= n)
     {
       n += MEM_BLOCK;

@@ -97,7 +97,7 @@ int FunCheck(int s)
   else
     return 0;
 }
-int FindUnary(char const* expression, int* i, int* previous, error_t* lastError)
+int FindUnary(char const* expression, int* i, int const* previous, error_t* lastError)
 {
   if (*previous == 6 || *previous == 2 || *previous == 5 || *previous == 0 || *previous == 3 || ((*previous == 1 || *previous == 7 || *previous == 8 || *previous == 9) && expression[*i + 1] == '-'))
   {
@@ -130,6 +130,175 @@ int FindUnary(char const* expression, int* i, int* previous, error_t* lastError)
   else
     return 0;
 }
+void DigitCase(char const *expression, char *output, int const* i, int* j, int* previous, error_t* lastError)
+{
+  if (*previous == 1 || *previous == 4 || *previous == 7 || *previous == 8 || *previous == 9)
+  {
+    *lastError = ERR_SIGNS;
+    return;
+  }
+  if (*previous == 6 && expression[*i - 1] != '.' && !isdigit(expression[*i - 1]))
+  {
+    *lastError = ERR_POINT;
+    return;
+  }
+  output[*j] = expression[*i];
+  (*j)++;
+  if ((!isdigit(expression[*i + 1]) && expression[*i + 1] != '.') || isspace(expression[*i + 1]))
+  {
+    output[*j] = ' ';
+    (*j)++;
+    *previous = 1;
+  }
+}
+void PointCase(char const *expression, char *output, int const* i, int* j, int* previous, error_t* lastError)
+{
+  if (*previous == 1)
+  {
+    *lastError = ERR_SIGNS;
+    return;
+  }
+  if (*previous == 6 || *previous == 8 || *previous == 9 || *previous == 7 || *previous == 4)
+  {
+    *lastError = ERR_POINT;
+    return;
+  }
+  if (!isdigit(expression[*i + 1]))
+    if (*i == 0)
+    {
+      *lastError = ERR_POINT;
+      return;
+    }
+    else if (!isdigit(expression[*i - 1]))
+    {
+      *lastError = ERR_POINT;
+      return;
+    }
+  output[*j] = expression[*i];
+  (*j)++;
+  if ((expression[*i + 1] != '(' && isoper(expression[*i + 1]) != 0) || isspace(expression[*i + 1]))
+  {
+    output[*j] = ' ';
+    (*j)++;
+    *previous = 1;
+  }
+  else
+    *previous = 6;
+}
+void ECase(char const *expression, char *output, int* i, int* j, int* previous, error_t* lastError)
+{
+  if ((*previous == 0 || *previous == 3 || *previous == 2 || *previous == 5) && !isdigit(expression[*i + 1]))
+  {
+    output[*j] = 'e';
+    (*j)++;
+    output[*j] = ' ';
+    (*j)++;
+    *previous = 8;
+  }
+  else if ((*previous == 6 || *previous == 1) && !isspace(expression[*i + 1]) && !isspace(expression[*i - 1]))
+  {
+    output[*j] = 'E';
+    (*j)++;
+    if (!isdigit(expression[*i + 1]) && (expression[*i + 1] != '+' && expression[*i + 1] != '-'))
+    {
+      *lastError = ERR_E;
+      return;
+    }
+    if (expression[*i + 1] == '+' || expression[*i + 1] == '-')
+    {
+      (*i)++;
+      output[*j] = expression[*i];
+      (*j)++;
+    }
+    if (isoper(expression[*i + 1]) || isspace(expression[*i + 1]) || expression[*i + 1] == 0)
+    {
+      *lastError = ERR_E;
+      return;
+    }
+    while (isdigit(expression[*i + 1]))
+    {
+      (*i)++;
+      output[*j] = expression[*i];
+      (*j)++;
+    }
+    if ((!isoper(expression[*i + 1]) || expression[*i + 1] == '(') && !isspace(expression[*i + 1]) && expression[*i + 1] != 0)
+    {
+      *lastError = ERR_E;
+      return;
+    }
+    output[*j] = ' ';
+    (*j)++;
+    *previous = 9;
+  }
+  else
+  {
+    *lastError = ERR_E;
+    return;
+  }
+}
+void OperCase(char const *expression, char *output, char* stack, int* i, int* j, int* k, int previous, error_t* lastError)
+{
+  int priority = 0, unarycase = 0;
+  if (expression[*i] == '-')
+  {
+    unarycase = FindUnary(expression, i, &previous, lastError);
+    if (unarycase == 1)
+      priority = 2;
+    if (*lastError != ERR_OK)
+      return;
+  }
+  if (*k && stack[*k - 1] != '(')
+  {
+    if (priority == 2 || isoper(expression[*i]) == 1)
+    {
+      if (priority != 2)
+        priority = 1;
+      while ((priority > isoper(stack[*k - 1])) && *k > 0 && (previous != 2 && isoper(stack[*k - 1]) != 1))
+      {
+        (*k)--;
+        output[*j] = stack[*k];
+        (*j)++;
+        output[*j] = ' ';
+        (*j)++;
+      }
+    }
+    else
+    {
+      if (unarycase == 2)
+        (*i)++;
+      int oper = isoper(expression[*i]);
+      if (unarycase == 2 && oper == 5)
+        oper = 0;
+      if (unarycase == 2 && (previous == 1 || previous == 7 || previous == 8 || previous == 9 || previous == 4))
+        oper = 4;
+      while ((oper >= isoper(stack[*k - 1])) && *k > 0)
+      {
+        (*k)--;
+        output[*j] = stack[*k];
+        (*j)++;
+        output[*j] = ' ';
+        (*j)++;
+      }
+      if (unarycase == 2)
+        (*i)--;
+    }
+  }
+  if (priority == 2)
+  {
+    stack[*k] = '!';
+    (*k)++;
+  }
+  else if (unarycase == 2 && (previous == 1 || previous == 7 || previous == 8 || previous == 9 || previous == 4))
+  {
+    stack[*k] = '+';
+    (*k)++;
+  }
+  else if (unarycase != 2)
+  {
+    stack[*k] = expression[*i];
+    (*k)++;
+  }
+}
 void Parse(char const *expression, char *output, error_t* lastError)
 {
   int i = 0, j = 0, k = 0, n, previous = 0;
@@ -145,63 +314,21 @@ void Parse(char const *expression, char *output, error_t* lastError)
   {
     if (isdigit(expression[i]))
     {
-      if (previous == 1 || previous == 4 || previous == 7 || previous == 8 || previous == 9)
+      DigitCase(expression, output, &i, &j, &previous, lastError);
+      if (*lastError != ERR_OK)
       {
-        *lastError = ERR_SIGNS;
         free(stack);
         return;
-      }
-      if (previous == 6 && expression[i - 1] != '.' && !isdigit(expression[i - 1]))
-      {
-        *lastError = ERR_POINT;
-        free(stack);
-        return;
-      }
-      output[j] = expression[i];
-      j++;
-      if ((!isdigit(expression[i + 1]) && expression[i + 1] != '.') || isspace(expression[i + 1]))
-      {
-        output[j] = ' ';
-        j++;
-        previous = 1;
       }
     }
     else if (expression[i] == '.')
     {
-      if (previous == 1)
+      PointCase(expression, output, &i, &j, &previous, lastError);
+      if (*lastError != ERR_OK)
       {
-        *lastError = ERR_SIGNS;
         free(stack);
         return;
       }
-      if (previous == 6 || previous == 8 || previous == 9 || previous == 7 || previous == 4 || previous == 6)
-      {
-        *lastError = ERR_POINT;
-        free(stack);
-        return;
-      }
-      if (!isdigit(expression[i + 1]))
-        if (i == 0)
-        {
-          *lastError = ERR_POINT;
-          free(stack);
-          return;
-        }
-        else if (!isdigit(expression[i - 1]))
-        {
-          *lastError = ERR_POINT;
-          free(stack);
-          return;
-        }
-      output[j] = expression[i];
-      j++;
-      if ((expression[i + 1] != '(' && isoper(expression[i + 1]) != 0) || isspace(expression[i + 1]))
-      {
-        output[j] = ' ';
-        j++;
-        previous = 1;
-      }
-      previous = 6;
     }
     else if (expression[i] == 'p' && expression[i + 1] == 'i')
     {
@@ -220,55 +347,9 @@ void Parse(char const *expression, char *output, error_t* lastError)
     }
     else if (expression[i] == 'e' || expression[i] == 'E')
     {
-      if ((previous == 0 || previous == 3 || previous == 2 || previous == 5) && !isdigit(expression[i + 1]))
+      ECase(expression, output, &i, &j, &previous, lastError);
+      if (*lastError != ERR_OK)
       {
-        output[j] = 'e';
-        j++;
-        output[j] = ' ';
-        j++;
-        previous = 8;
-      }
-      else if ((previous == 6 || previous == 1) && !isspace(expression[i + 1]) && !isspace(expression[i - 1]))
-      {
-        output[j] = 'E';
-        j++;
-        if (!isdigit(expression[i + 1]) && (expression[i + 1] != '+' && expression[i + 1] != '-'))
-        {
-          *lastError = ERR_E;
-          free(stack);
-          return;
-        }
-        if (expression[i + 1] == '+' || expression[i + 1] == '-')
-        {
-          i++;
-          output[j] = expression[i];
-          j++;
-        }
-        if (isoper(expression[i + 1]) || isspace(expression[i + 1]) || expression[i + 1] == 0)
-        {
-          *lastError = ERR_E;
-          free(stack);
-          return;
-        }
-        while (isdigit(expression[i + 1]))
-        {
-          i++;
-          output[j] = expression[i];
-          j++;
-        }
-        if ((!isoper(expression[i + 1]) || expression[i + 1] == '(') && !isspace(expression[i + 1]) && expression[i + 1] != 0)
-        {
-          *lastError = ERR_E;
-          free(stack);
-          return;
-        }
-        output[j] = ' ';
-        j++;
-        previous = 9;
-      }
-      else
-      {
-        *lastError = ERR_E;
         free(stack);
         return;
       }
@@ -329,68 +410,11 @@ void Parse(char const *expression, char *output, error_t* lastError)
     }
     else if (isoper(expression[i]))
     {
-      int priority = 0, unarycase = 0;
-      if (expression[i] == '-')
+      OperCase(expression, output, stack, &i, &j, &k, previous, lastError);
+      if (*lastError != ERR_OK)
       {
-        unarycase = FindUnary(expression, &i, &previous, lastError);
-        if (unarycase == 1)
-          priority = 2;
-        if (*lastError != ERR_OK)
-        {
-          free(stack);
-          return;
-        }
-      }
-      if (k && stack[k - 1] != '(')
-      {
-        if (priority == 2 || isoper(expression[i]) == 1)
-        {
-          if (priority != 2)
-            priority = 1;
-          while ((priority > isoper(stack[k - 1])) && k > 0 && (previous != 2 && isoper(stack[k - 1]) != 1))
-          {
-            k--;
-            output[j] = stack[k];
-            j++;
-            output[j] = ' ';
-            j++;
-          }
-        }
-        else
-        {
-          if (unarycase == 2)
-            i++;
-          int oper = isoper(expression[i]);
-          if (unarycase == 2 && oper == 5)
-            oper = 0;
-          if (unarycase == 2 && (previous == 1 || previous == 7 || previous == 8 || previous == 9 || previous == 4))
-            oper = 4;
-          while ((oper >= isoper(stack[k - 1])) && k > 0)
-          {
-            k--;
-            output[j] = stack[k];
-            j++;
-            output[j] = ' ';
-            j++;
-          }
-          if (unarycase == 2)
-            i--;
-        }
-      }
-      if (priority == 2)
-      {
-        stack[k] = '!';
-        k++;
-      }
-      else if (unarycase == 2 && (previous == 1 || previous == 7 || previous == 8 || previous == 9 || previous == 4))
-      {
-        stack[k] = '+';
-        k++;
-      }
-      else if (unarycase != 2)
-      {
-        stack[k] = expression[i];
-        k++;
+        free(stack);
+        return;
       }
       previous = 5;
     }
@@ -416,25 +440,18 @@ void Parse(char const *expression, char *output, error_t* lastError)
     }
   }
   k--;
-  //if (isoper(stack[0]) || (isdigit(output[j - 2]) && !isoper(stack[0])) || FunCheck(stack[0]) || ((previous == 7 || previous == 8) && !isoper(stack[0])))
-    for (; k > -1; k--, j++)
-    {
-      if (stack[k] == '(')
-      {
-        *lastError = ERR_BRACKETS;
-        free(stack);
-        return;
-      }
-      output[j] = stack[k];
-      output[j + 1] = ' ';
-      j++;
-    }
-  /*else
+  for (; k > -1; k--, j++)
   {
-    *lastError = ERR_OPERANDS;
-    free(stack);
-    return;
-  }*/
+    if (stack[k] == '(')
+    {
+      *lastError = ERR_BRACKETS;
+      free(stack);
+      return;
+    }
+    output[j] = stack[k];
+    output[j + 1] = ' ';
+    j++;
+  }
   free(stack);
   output[j] = '\0';
 }

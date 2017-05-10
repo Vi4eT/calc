@@ -33,17 +33,17 @@ error_t ReportError(error_t error)
   printf("ERROR: %s\n", GetErrorString(error));
   return error;
 }
-int isempty(char* line)
+int isempty(char const* line)
 {
   int i = 0;
   for (i = 0; line[i] != 0; i++)
   {
-    if (isspace(line[i]) == 0)
+    if (!isspace(line[i]))
       return 0;
   }
   return 1;
 }
-int iscomment(char* line)
+int iscomment(char const* line)
 {
   int i;
   for (i = 0; line[i] != 0; i++)
@@ -58,9 +58,8 @@ int iscomment(char* line)
 }
 char* ReadLine(FILE* in, error_t* lastError)
 {
-  int i = 0, n = MEM_BLOCK;
+  int i = 0, n = MEM_BLOCK, c = 0;
   char* line = NULL, *realltmp = NULL, *err = (char*)1;
-  char c = 0;
   line = (char*)malloc(sizeof(char)*n);
   if (line == NULL)
   {
@@ -72,8 +71,8 @@ char* ReadLine(FILE* in, error_t* lastError)
   {
     for (; i < n; i++)
     {
-      c = (char)getc(in);
-      line[i] = c;
+      c = getc(in);
+      line[i] = (char)c;
       if (c == '\n' || c == EOF)
         break;
     }
