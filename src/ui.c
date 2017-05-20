@@ -33,28 +33,18 @@ error_t ReportError(error_t error)
   printf("ERROR: %s\n", GetErrorString(error));
   return error;
 }
-int isempty(char const* line)
-{
-  int i = 0;
-  for (i = 0; line[i] != 0; i++)
-  {
-    if (!isspace(line[i]))
-      return 0;
-  }
-  return 1;
-}
 int iscomment(char const* line)
 {
   int i;
   for (i = 0; line[i] != 0; i++)
   {
-    if (!isspace(line[i]))
+    if (!isspace((unsigned char)line[i]))
       if (line[i] == '/' && line[i + 1] == '/')
         return 1;
       else
-        break;
+        return 0;
   }
-  return 0;
+  return 2;
 }
 char* ReadLine(FILE* in, error_t* lastError)
 {
@@ -94,29 +84,22 @@ char* ReadLine(FILE* in, error_t* lastError)
 }
 void ProcessLine(char const* line, FILE* in, error_t* lastError)
 {
-  printf("%s == ", line);
-  double result = Calculate(line, lastError);
-  if (*lastError == ERR_OK)
-  {
-    printf("%g", result);
-    if (!feof(in))
-      printf("\n");
-  }
-  else
-    ReportError(*lastError);
-}
-void print(char* line, FILE* in, error_t* lastError)
-{
   if (iscomment(line))
     if (feof(in))
       printf("%s", line);
     else
       printf("%s\n", line);
-  else if (isempty(line))
-    if (feof(in))
-      printf("%s", line);
-    else
-      printf("%s\n", line);
   else
-    ProcessLine(line, in, lastError);
+  {
+    printf("%s == ", line);
+    double result = Calculate(line, lastError);
+    if (*lastError == ERR_OK)
+    {
+      printf("%g", result);
+      if (!feof(in))
+        printf("\n");
+    }
+    else
+      ReportError(*lastError);
+  }
 }

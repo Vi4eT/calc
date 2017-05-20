@@ -4,17 +4,18 @@ int main(int argc, char const* argv[])
   FILE* in = stdin;
   char* line = NULL;
   error_t lastError = ERR_OK;
+  system("chcp 1251 > nul");
   if (argc > 1 && (in = fopen(argv[1], "r")) == NULL)// Choose an input source
   {
     lastError = ERR_CANNOT_OPEN;
     ReportError(lastError);
-    exit(ERR_CANNOT_OPEN);
+    exit(lastError);
   }
   if (argc > 2)
   {
     lastError = ERR_ARGUMENTS;
     ReportError(lastError);
-    exit(ERR_ARGUMENTS);
+    exit(lastError);
   }
   while ((line = ReadLine(in, &lastError)) != NULL)// Process the data line by line
   {
@@ -22,7 +23,7 @@ int main(int argc, char const* argv[])
       continue;
     if (lastError != ERR_OK)
       lastError = ERR_OK;
-    print(line, in, &lastError);
+    ProcessLine(line, in, &lastError);
     free(line);
     if (feof(in))//always != NULL
       break;

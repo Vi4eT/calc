@@ -86,7 +86,7 @@ double Count(char* output, error_t* lastError)
   }
   while (*output)
   {
-    if (isdigit(*output) || *output == '.')
+    if (isdigit((unsigned char)*output) || *output == '.')
     {
       stack[j] = strtod(output, &endptr);
       output = endptr;
@@ -198,7 +198,7 @@ double Count(char* output, error_t* lastError)
       j++;
       *(output++);
     }
-    if (isspace(*output))
+    if (isspace((unsigned char)*output))
       *(output++);
     if (j >= n)
     {
@@ -228,6 +228,8 @@ double Calculate(char const* expression, error_t* lastError)
     return 1;
   }
   Parse(expression, output, lastError);
+  if (*output == '\0')
+    *lastError = ERR_EXPRESSION;
   if (*lastError != ERR_OK)
   {
     free(output);
