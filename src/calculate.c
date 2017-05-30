@@ -74,11 +74,10 @@ void FunCount(char const* output, double* stack, int j, error_t* lastError)
 }
 double Count(char* output, error_t* lastError)
 {
-  int j = 0, n;
-  double *stack, *realltmp, number;
+  int j = 0, size = 2 * MEM_BLOCK;
+  double *stack, *reallptr = NULL, number;
   char *endptr;
-  n = 2 * MEM_BLOCK;
-  stack = (double*)malloc(sizeof(double)*n);
+  stack = (double*)malloc(sizeof(double)*size);
   if (stack == NULL)
   {
     *lastError = ERR_NOT_ENOUGH_MEMORY;
@@ -200,17 +199,17 @@ double Count(char* output, error_t* lastError)
     }
     if (isspace((unsigned char)*output))
       *(output++);
-    if (j >= n)
+    if (j >= size)
     {
-      n += MEM_BLOCK;
-      if ((realltmp = (double*)realloc(stack, n)) == NULL)
+      size += MEM_BLOCK;
+      if ((reallptr = (double*)realloc(stack, size)) == NULL)
       {
         *lastError = ERR_NOT_ENOUGH_MEMORY;
         free(stack);
         return 1;
       }
       else
-        stack = realltmp;
+        stack = reallptr;
     }
   }
   number = stack[0];

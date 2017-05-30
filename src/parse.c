@@ -228,7 +228,7 @@ void ECase(char const *expression, char *output, int* i, int* j, int* previous, 
       output[*j] = expression[*i];
       (*j)++;
     }
-    if (isoper(expression[*i + 1]) || isspace((unsigned char)expression[*i + 1]) || expression[*i + 1] == 0)
+    if (isoper(expression[*i + 1]) || isspace((unsigned char)expression[*i + 1]) || expression[*i + 1] == '\0')
     {
       *lastError = ERR_E;
       return;
@@ -239,7 +239,7 @@ void ECase(char const *expression, char *output, int* i, int* j, int* previous, 
       output[*j] = expression[*i];
       (*j)++;
     }
-    if ((!isoper(expression[*i + 1]) || expression[*i + 1] == '(') && !isspace((unsigned char)expression[*i + 1]) && expression[*i + 1] != 0)
+    if ((!isoper(expression[*i + 1]) || expression[*i + 1] == '(') && !isspace((unsigned char)expression[*i + 1]) && expression[*i + 1] != '\0')
     {
       *lastError = ERR_E;
       return;
@@ -319,10 +319,9 @@ void OperCase(char const *expression, char *output, char* stack, int* i, int* j,
 }
 void Parse(char const *expression, char *output, error_t* lastError)
 {
-  int i = 0, j = 0, k = 0, n, previous = 0, digit = 0;
-  char *stack, *realltmp = NULL;
-  n = 2 * MEM_BLOCK;
-  stack = (char*)malloc(sizeof(char)*n);
+  int i = 0, j = 0, k = 0, size = 2 * MEM_BLOCK, previous = 0, digit = 0;
+  char *stack, *reallptr = NULL;
+  stack = (char*)malloc(sizeof(char)*size);
   if (stack == NULL)
   {
     *lastError = ERR_NOT_ENOUGH_MEMORY;
@@ -441,7 +440,7 @@ void Parse(char const *expression, char *output, error_t* lastError)
       }
       previous = 4;
     }
-    else if (isoper(expression[i]))
+    else if (isoper(expression[i]) && expression[i] != '!')
     {
       if (previous == 6 || previous == 2) //&& expression[i - 1] != ' ')
       {
@@ -465,17 +464,17 @@ void Parse(char const *expression, char *output, error_t* lastError)
       return;
     }
     i++;
-    if (k >= n)
+    if (k >= size)
     {
-      n += MEM_BLOCK;
-      if ((realltmp = (char*)realloc(stack, n)) == NULL)
+      size += MEM_BLOCK;
+      if ((reallptr = (char*)realloc(stack, size)) == NULL)
       {
         *lastError = ERR_NOT_ENOUGH_MEMORY;
         free(stack);
         return;
       }
       else
-        stack = realltmp;
+        stack = reallptr;
     }
   }
   k--;

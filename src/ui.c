@@ -36,7 +36,7 @@ error_t ReportError(error_t error)
 int iscomment(char const* line)
 {
   int i;
-  for (i = 0; line[i] != 0; i++)
+  for (i = 0; line[i] != '\0'; i++)
   {
     if (!isspace((unsigned char)line[i]))
       if (line[i] == '/' && line[i + 1] == '/')
@@ -48,9 +48,9 @@ int iscomment(char const* line)
 }
 char* ReadLine(FILE* in, error_t* lastError)
 {
-  int i = 0, n = MEM_BLOCK, c = 0;
-  char* line = NULL, *realltmp = NULL, *err = (char*)1;
-  line = (char*)malloc(sizeof(char)*n);
+  int i = 0, size = MEM_BLOCK, c = 0;
+  char* line = NULL, *reallptr = NULL, *err = (char*)1;
+  line = (char*)malloc(sizeof(char) * size);
   if (line == NULL)
   {
     *lastError = ERR_NOT_ENOUGH_MEMORY;
@@ -59,27 +59,27 @@ char* ReadLine(FILE* in, error_t* lastError)
   }
   while (c != '\n' && c != EOF)
   {
-    for (; i < n; i++)
+    for (; i < size; i++)
     {
-      c = getc(in);
+      c = fgetc(in);
       line[i] = (char)c;
       if (c == '\n' || c == EOF)
         break;
     }
     if (c != '\n' && c != EOF)
     {
-      n += MEM_BLOCK;
-      if ((realltmp = (char*)realloc(line, n)) == NULL)
+      size += MEM_BLOCK;
+      if ((reallptr = (char*)realloc(line, size)) == NULL)
       {
         *lastError = ERR_NOT_ENOUGH_MEMORY;
         ReportError(*lastError);
         return err;
       }
       else
-        line = realltmp;
+        line = reallptr;
     }
   }
-  line[i] = 0;
+  line[i] = '\0';
   return line;
 }
 void ProcessLine(char const* line, FILE* in, error_t* lastError)
