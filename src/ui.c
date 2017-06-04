@@ -23,8 +23,6 @@ char const* GetErrorString(error_t error)
     return "Incorrect point usage.";
   else if (error == ERR_MINUS)
     return "Incorrect minus usage.";
-  else if (error == ERR_OK)
-    return "Redundant error report.";
   else
     return "No error code!";
 }
@@ -54,7 +52,11 @@ char* ReadLine(FILE* in, error_t* lastError)
   if (line == NULL)
   {
     *lastError = ERR_NOT_ENOUGH_MEMORY;
-    ReportError(*lastError);
+    do
+      c = fgetc(in);
+    while (c != '\n' && c != EOF);
+    if (c == EOF)
+      return NULL;
     return err;
   }
   while (c != '\n' && c != EOF)
@@ -72,7 +74,12 @@ char* ReadLine(FILE* in, error_t* lastError)
       if ((reallptr = (char*)realloc(line, size)) == NULL)
       {
         *lastError = ERR_NOT_ENOUGH_MEMORY;
-        ReportError(*lastError);
+        free(line);
+        do
+          c = fgetc(in);
+        while (c != '\n' && c != EOF);
+        if (c == EOF)
+          return NULL;
         return err;
       }
       else
@@ -80,25 +87,23 @@ char* ReadLine(FILE* in, error_t* lastError)
     }
   }
   line[i] = '\0';
+  if (c == EOF && i == 0)
+  {
+    free(line);
+    return NULL;
+  }
   return line;
 }
-void ProcessLine(char const* line, FILE* in, error_t* lastError)
+void ProcessLine(char const* line, error_t* lastError)
 {
   if (iscomment(line))
-    if (feof(in))
-      printf("%s", line);
-    else
-      printf("%s\n", line);
+    puts(line);
   else
   {
     printf("%s == ", line);
     double result = Calculate(line, lastError);
     if (*lastError == ERR_OK)
-    {
-      printf("%g", result);
-      if (!feof(in))
-        printf("\n");
-    }
+      printf("%g\n", result);
     else
       ReportError(*lastError);
   }

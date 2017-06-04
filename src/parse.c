@@ -12,27 +12,27 @@
 #define CEIL 11
 int isfunc(char const* s)
 {
-  if (strncmp(s, "sqrt", 4) == 0)
+  if (!strncmp(s, "sqrt", 4) || !strncmp(s, "SQRT", 4))
     return SQRT;
-  else if (strncmp(s, "sin", 3) == 0)
+  else if (!strncmp(s, "sin", 3) || !strncmp(s, "SIN", 3))
     return SIN;
-  else if (strncmp(s, "cos", 3) == 0)
+  else if (!strncmp(s, "cos", 3) || !strncmp(s, "COS", 3))
     return COS;
-  else if (strncmp(s, "tg", 2) == 0)
+  else if (!strncmp(s, "tg", 2) || !strncmp(s, "TG", 2))
     return TG;
-  else if (strncmp(s, "ctg", 3) == 0)
+  else if (!strncmp(s, "ctg", 3) || !strncmp(s, "CTG", 3))
     return CTG;
-  else if (strncmp(s, "arcsin", 6) == 0)
+  else if (!strncmp(s, "arcsin", 6) || !strncmp(s, "ARCSIN", 6))
     return ARCSIN;
-  else if (strncmp(s, "arccos", 6) == 0)
+  else if (!strncmp(s, "arccos", 6) || !strncmp(s, "ARCCOS", 6))
     return ARCCOS;
-  else if (strncmp(s, "arctg", 5) == 0)
+  else if (!strncmp(s, "arctg", 5) || !strncmp(s, "ARCTG", 5))
     return ARCTG;
-  else if (strncmp(s, "ln", 2) == 0)
+  else if (!strncmp(s, "ln", 2) || !strncmp(s, "LN", 2))
     return LN;
-  else if (strncmp(s, "floor", 5) == 0)
+  else if (!strncmp(s, "floor", 5) || !strncmp(s, "FLOOR", 5))
     return FLOOR;
-  else if (strncmp(s, "ceil", 4) == 0)
+  else if (!strncmp(s, "ceil", 4) || !strncmp(s, "CEIL", 4))
     return CEIL;
   else
     return 0;
@@ -320,7 +320,7 @@ void OperCase(char const *expression, char *output, char* stack, int* i, int* j,
 void Parse(char const *expression, char *output, error_t* lastError)
 {
   int i = 0, j = 0, k = 0, size = 2 * MEM_BLOCK, previous = 0, digit = 0;
-  char *stack, *reallptr = NULL;
+  char *stack = NULL, *reallptr = NULL;
   stack = (char*)malloc(sizeof(char)*size);
   if (stack == NULL)
   {

@@ -1,14 +1,10 @@
 #pragma once
 #pragma warning(disable:4996)
 #define _USE_MATH_DEFINES
-#ifndef _CRTDBG_MAP_ALLOC
-  #define _CRTDBG_MAP_ALLOC
-#endif // !_CRTDBG_MAP_ALLOC
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
-#include <crtdbg.h>
 #define MEM_BLOCK 8
 typedef enum
 {
@@ -46,4 +42,4 @@ char const* GetErrorString(error_t error);
 error_t ReportError(error_t error);
 int iscomment(char const* line);
 char* ReadLine(FILE* in, error_t* lastError);
-void ProcessLine(char const* line, FILE* in, error_t* lastError);
+void ProcessLine(char const* line, error_t* lastError);

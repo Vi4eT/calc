@@ -9,27 +9,26 @@ int main(int argc, char const* argv[])
   {
     lastError = ERR_CANNOT_OPEN;
     ReportError(lastError);
-    exit(lastError);
+    return 0;
   }
   if (argc > 2)
   {
     lastError = ERR_ARGUMENTS;
     ReportError(lastError);
-    exit(lastError);
+    return 0;
   }
   while ((line = ReadLine(in, &lastError)) != NULL)// Process the data line by line
   {
-    if (line == (char*)1)//ReadLine error
-      continue;
     if (lastError != ERR_OK)
-      lastError = ERR_OK;
-    ProcessLine(line, in, &lastError);
-    free(line);
-    if (feof(in))//always != NULL
-      break;
+      ReportError(lastError);
+    else
+    {
+      ProcessLine(line, &lastError);
+      free(line);
+    }
+    lastError = ERR_OK;
   }
   if (in != stdin)// Clean up
     fclose(in);
-  _CrtDumpMemoryLeaks();
   return 0;
 }
