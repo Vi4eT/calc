@@ -1,4 +1,5 @@
-#include "calc.h"
+#include "main.h"
+#include "ui.h"
 int main(int argc, char const* argv[])
 {
   FILE* in = stdin;

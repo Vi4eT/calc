@@ -1,15 +1,5 @@
-#include "calc.h"
-#define SQRT 1
-#define SIN 2
-#define COS 3
-#define TG 4
-#define CTG 5
-#define ARCSIN 6
-#define ARCCOS 7
-#define ARCTG 8
-#define LN 9
-#define FLOOR 10
-#define CEIL 11
+#include "main.h"
+#include "parse.h"
 int isfunc(char const* s)
 {
   if (!strncmp(s, "sqrt", 4) || !strncmp(s, "SQRT", 4))

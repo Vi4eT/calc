@@ -1,4 +1,6 @@
-#include "calc.h"
+#include "main.h"
+#include "ui.h"
+#include "calculate.h"
 char const* GetErrorString(error_t error)
 {
   if (error == ERR_NOT_ENOUGH_MEMORY)

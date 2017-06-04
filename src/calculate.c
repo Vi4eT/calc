@@ -1,5 +1,6 @@
-#include "calc.h"
-#include <math.h>
+#include "main.h"
+#include "calculate.h"
+#include "parse.h"
 void FunCount(char const* output, double* stack, int j, error_t* lastError)
 {
   if (*output == 'q')
