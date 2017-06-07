@@ -1,6 +1,13 @@
 #include "main.h"
 #include "calculate.h"
 #include "parse.h"
+int FunCheck(int s)
+{
+  if (s == 'q' || s == 's' || s == 'c' || s == 't' || s == 'g' || s == 'i' || s == 'o' || s == 'a' || s == 'n' || s == 'f' || s == 'l')
+    return 1;
+  else
+    return 0;
+}
 void FunCount(char const* output, double* stack, int j, error_t* lastError)
 {
   if (*output == 'q')

@@ -30,6 +30,6 @@ int main(int argc, char const* argv[])
     lastError = ERR_OK;
   }
   if (in != stdin)// Clean up
-    fclose(in);
+    fclose(in);//in != NULL
   return 0;
 }

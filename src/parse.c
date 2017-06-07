@@ -80,16 +80,9 @@ int isoper(char s)
   else
     return 0;
 }
-int FunCheck(int s)
+int FindUnary(char const* expression, int* i, prev_t const* previous, error_t* lastError)
 {
-  if (s == 'q' || s == 's' || s == 'c' || s == 't' || s == 'g' || s == 'i' || s == 'o' || s == 'a' || s == 'n' || s == 'f' || s == 'l')
-    return 1;
-  else
-    return 0;
-}
-int FindUnary(char const* expression, int* i, int const* previous, error_t* lastError)
-{
-  if (*previous == 6 || *previous == 2 || *previous == 5 || *previous == 0 || *previous == 3 || ((*previous == 1 || *previous == 7 || *previous == 8 || *previous == 9) && expression[*i + 1] == '-'))
+  if (*previous == DOT || *previous == FUNCTION || *previous == OPERATION || *previous == EMPTY || *previous == OPEN_BRACKET || ((*previous == NUMBER || *previous == CONST_PI || *previous == CONST_E || *previous == SCI_NUMBER) && expression[*i + 1] == '-'))
   {
     if (expression[*i + 1] == ')' || isoper(expression[*i + 1]) == 1 || isoper(expression[*i + 1]) == 3 || expression[*i + 1] == '+')
     {
@@ -112,7 +105,7 @@ int FindUnary(char const* expression, int* i, int const* previous, error_t* last
         if (amount % 2 == 0)
           return 2;
       }
-      if ((*previous == 1 || *previous == 6 || *previous == 7 || *previous == 8 || *previous == 9) && amount % 2)
+      if ((*previous == NUMBER || *previous == DOT || *previous == CONST_PI || *previous == CONST_E || *previous == SCI_NUMBER) && amount % 2)
         return 0;
       return 1;
     }
@@ -120,19 +113,19 @@ int FindUnary(char const* expression, int* i, int const* previous, error_t* last
   else
     return 0;
 }
-void DigitCase(char const *expression, char *output, int const* i, int* j, int* previous, int* digit, error_t* lastError)
+void DigitCase(char const *expression, char *output, int const* i, int* j, prev_t* previous, int* digit, error_t* lastError)
 {
-  if (*previous == 1 || *previous == 4 || *previous == 7 || *previous == 8 || *previous == 9)
+  if (*previous == NUMBER || *previous == CLOSE_BRACKET || *previous == CONST_PI || *previous == CONST_E || *previous == SCI_NUMBER)
   {
     *lastError = ERR_SIGNS;
     return;
   }
-  if (*previous == 6 && expression[*i - 1] != '.' && !isdigit((unsigned char)expression[*i - 1]))
+  if (*previous == DOT && expression[*i - 1] != '.' && !isdigit((unsigned char)expression[*i - 1]))
   {
     *lastError = ERR_POINT;
     return;
   }
-  if (*previous == 2) //&& expression[*i - 1] != ' ')
+  if (*previous == FUNCTION) //&& expression[*i - 1] != ' ')
   {
     *lastError = ERR_EXPRESSION;
     return;
@@ -143,25 +136,25 @@ void DigitCase(char const *expression, char *output, int const* i, int* j, int* 
   {
     output[*j] = ' ';
     (*j)++;
-    *previous = 1;
+    *previous = NUMBER;
     *digit = 0;
   }
   else
     *digit = 1;
 }
-void PointCase(char const *expression, char *output, int const* i, int* j, int* previous, int* digit, error_t* lastError)
+void PointCase(char const *expression, char *output, int const* i, int* j, prev_t* previous, const int* digit, error_t* lastError)
 {
-  if (*previous == 1)
+  if (*previous == NUMBER)
   {
     *lastError = ERR_SIGNS;
     return;
   }
-  if (*previous == 6 || *previous == 8 || *previous == 9 || *previous == 7 || *previous == 4 || (*previous == 5 && *digit == 0) || (*previous == 3 && *digit == 0)) //is 5, 3 correct?
+  if (*previous == DOT || *previous == CONST_E || *previous == SCI_NUMBER || *previous == CONST_PI || *previous == CLOSE_BRACKET || (*previous == OPERATION && *digit == 0) || (*previous == OPEN_BRACKET && *digit == 0)) //is OPERATION, OPEN_BRACKET correct?
   {
     *lastError = ERR_POINT;
     return;
   }
-  if (*previous == 2) //&& expression[*i - 1] != ' ')
+  if (*previous == FUNCTION) //&& expression[*i - 1] != ' ')
   {
     *lastError = ERR_EXPRESSION;
     return;
@@ -183,27 +176,27 @@ void PointCase(char const *expression, char *output, int const* i, int* j, int* 
   {
     output[*j] = ' ';
     (*j)++;
-    *previous = 1;
+    *previous = NUMBER;
   }
   else
-    *previous = 6;
+    *previous = DOT;
 }
-void ECase(char const *expression, char *output, int* i, int* j, int* previous, error_t* lastError)
+void ECase(char const *expression, char *output, int* i, int* j, prev_t* previous, error_t* lastError)
 {
-  if (*previous == 2) //&& expression[*i - 1] != ' ')
+  if (*previous == FUNCTION) //&& expression[*i - 1] != ' ')
   {
     *lastError = ERR_EXPRESSION;
     return;
   }
-  if ((*previous == 0 || *previous == 3 || *previous == 2 || *previous == 5) && !isdigit((unsigned char)expression[*i + 1]))
+  if ((*previous == EMPTY || *previous == OPEN_BRACKET || *previous == FUNCTION || *previous == OPERATION) && !isdigit((unsigned char)expression[*i + 1]))
   {
     output[*j] = 'e';
     (*j)++;
     output[*j] = ' ';
     (*j)++;
-    *previous = 8;
+    *previous = CONST_E;
   }
-  else if ((*previous == 6 || *previous == 1) && !isspace((unsigned char)expression[*i + 1]) && !isspace((unsigned char)expression[*i - 1]))
+  else if ((*previous == DOT || *previous == NUMBER) && !isspace((unsigned char)expression[*i + 1]) && !isspace((unsigned char)expression[*i - 1]))
   {
     output[*j] = 'E';
     (*j)++;
@@ -236,7 +229,7 @@ void ECase(char const *expression, char *output, int* i, int* j, int* previous, 
     }
     output[*j] = ' ';
     (*j)++;
-    *previous = 9;
+    *previous = SCI_NUMBER;
   }
   else
   {
@@ -244,7 +237,7 @@ void ECase(char const *expression, char *output, int* i, int* j, int* previous, 
     return;
   }
 }
-void OperCase(char const *expression, char *output, char* stack, int* i, int* j, int* k, int previous, error_t* lastError)
+void OperCase(char const *expression, char *output, char* stack, int* i, int* j, int* k, prev_t previous, error_t* lastError)
 {
   int priority = 0, unarycase = 0;
   if (expression[*i] == '-')
@@ -261,7 +254,7 @@ void OperCase(char const *expression, char *output, char* stack, int* i, int* j,
     {
       if (priority != 2)
         priority = 1;
-      while ((priority > isoper(stack[*k - 1])) && *k > 0 && (previous != 2 && isoper(stack[*k - 1]) != 1))
+      while ((priority > isoper(stack[*k - 1])) && *k > 0 && (previous != FUNCTION && isoper(stack[*k - 1]) != 1))
       {
         (*k)--;
         output[*j] = stack[*k];
@@ -277,7 +270,7 @@ void OperCase(char const *expression, char *output, char* stack, int* i, int* j,
       int oper = isoper(expression[*i]);
       if (unarycase == 2 && oper == 5)
         oper = 0;
-      if (unarycase == 2 && (previous == 1 || previous == 7 || previous == 8 || previous == 9 || previous == 4))
+      if (unarycase == 2 && (previous == NUMBER || previous == CONST_PI || previous == CONST_E || previous == SCI_NUMBER || previous == CLOSE_BRACKET))
         oper = 4;
       while ((oper >= isoper(stack[*k - 1])) && *k > 0)
       {
@@ -296,7 +289,7 @@ void OperCase(char const *expression, char *output, char* stack, int* i, int* j,
     stack[*k] = '!';
     (*k)++;
   }
-  else if (unarycase == 2 && (previous == 1 || previous == 7 || previous == 8 || previous == 9 || previous == 4))
+  else if (unarycase == 2 && (previous == NUMBER || previous == CONST_PI || previous == CONST_E || previous == SCI_NUMBER || previous == CLOSE_BRACKET))
   {
     stack[*k] = '+';
     (*k)++;
@@ -309,7 +302,8 @@ void OperCase(char const *expression, char *output, char* stack, int* i, int* j,
 }
 void Parse(char const *expression, char *output, error_t* lastError)
 {
-  int i = 0, j = 0, k = 0, size = 2 * MEM_BLOCK, previous = 0, digit = 0;
+  int i = 0, j = 0, k = 0, size = 2 * MEM_BLOCK, digit = 0;
+  prev_t previous = EMPTY;
   char *stack = NULL, *reallptr = NULL;
   stack = (char*)malloc(sizeof(char)*size);
   if (stack == NULL)
@@ -341,13 +335,13 @@ void Parse(char const *expression, char *output, error_t* lastError)
     {
       if (expression[i] == 'p' && expression[i + 1] == 'i') //|| (expression[i] == 'P' && (expression[i + 1] == 'I' || expression[i + 1] == 'i')))
       {
-        if (previous == 1 || previous == 4 || previous == 6 || previous == 7 || previous == 8 || previous == 9)
+        if (previous == NUMBER || previous == CLOSE_BRACKET || previous == DOT || previous == CONST_PI || previous == CONST_E || previous == SCI_NUMBER)
         {
           *lastError = ERR_SIGNS;
           free(stack);
           return;
         }
-        if (previous == 2) //&& expression[i - 1] != ' ')
+        if (previous == FUNCTION) //&& expression[i - 1] != ' ')
         {
           *lastError = ERR_EXPRESSION;
           free(stack);
@@ -358,7 +352,7 @@ void Parse(char const *expression, char *output, error_t* lastError)
         output[j] = ' ';
         j++;
         i++;
-        previous = 7;
+        previous = CONST_PI;
       }
       else if (expression[i] == 'e' || expression[i] == 'E')
       {
@@ -371,7 +365,7 @@ void Parse(char const *expression, char *output, error_t* lastError)
       }
       else if (isfunc(expression + i))
       {
-        if (previous == 1 || previous == 2 /*&& expression[i - 1] != ' ')*/ || previous == 4 || previous == 6 || previous == 7 || previous == 8 || previous == 9)
+        if (previous == NUMBER || previous == FUNCTION /*&& expression[i - 1] != ' ')*/ || previous == CLOSE_BRACKET || previous == DOT || previous == CONST_PI || previous == CONST_E || previous == SCI_NUMBER)
         {
           *lastError = ERR_EXPRESSION;
           free(stack);
@@ -380,7 +374,7 @@ void Parse(char const *expression, char *output, error_t* lastError)
         FunToStack(&stack[k], isfunc(expression + i));
         k++;
         Shift(&i, isfunc(expression + i));
-        previous = 2;
+        previous = FUNCTION;
       }
       else
       {
@@ -391,7 +385,7 @@ void Parse(char const *expression, char *output, error_t* lastError)
     }
     else if (expression[i] == '(')
     {
-      if (previous == 1 || previous == 4 || previous == 6 || previous == 7 || previous == 8 || previous == 9)
+      if (previous == NUMBER || previous == CLOSE_BRACKET || previous == DOT || previous == CONST_PI || previous == CONST_E || previous == SCI_NUMBER)
       {
         *lastError = ERR_SIGNS;
         free(stack);
@@ -399,18 +393,18 @@ void Parse(char const *expression, char *output, error_t* lastError)
       }
       stack[k] = expression[i];
       k++;
-      previous = 3;
+      previous = OPEN_BRACKET;
     }
     else if (expression[i] == ')')
     {
       k--;
-      if (k < 0 || previous == 0 || previous == 2 || previous == 5)
+      if (k < 0 || previous == EMPTY || previous == FUNCTION || previous == OPERATION)
       {
         *lastError = ERR_BRACKETS;
         free(stack);
         return;
       }
-      if (previous == 3)
+      if (previous == OPEN_BRACKET)
       {
         *lastError = ERR_OPERANDS;
         free(stack);
@@ -428,11 +422,11 @@ void Parse(char const *expression, char *output, error_t* lastError)
         free(stack);
         return;
       }
-      previous = 4;
+      previous = CLOSE_BRACKET;
     }
     else if (isoper(expression[i]) && expression[i] != '!')
     {
-      if (previous == 6 || previous == 2) //&& expression[i - 1] != ' ')
+      if (previous == DOT || previous == FUNCTION) //&& expression[i - 1] != ' ')
       {
         *lastError = ERR_EXPRESSION;
         free(stack);
@@ -444,7 +438,7 @@ void Parse(char const *expression, char *output, error_t* lastError)
         free(stack);
         return;
       }
-      previous = 5;
+      previous = OPERATION;
     }
     else if (isspace((unsigned char)expression[i]));
     else
