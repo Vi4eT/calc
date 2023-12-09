@@ -5,4 +5,4 @@
 пользователем в виде строки текста: `"3 * 2.5 / (2 + 2 * 7)"`.
 
 Полное условие задания с актуальными изменениями доступно по ссылке:
-[Калькулятор выражений](https://sites.google.com/site/yap1057/ii-semestr/kursovik).
+[Калькулятор выражений](https://docs.google.com/document/d/1k7sHx5tgwlIBXyJt1ZdCz6kAj7rQbf1l2qLQ2OvJM78/edit).
